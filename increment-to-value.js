@@ -61,6 +61,8 @@
 			var newText = parseInt("1" + pads[targets[i].incrementToValue.finalValueStrLength - (newValue + "").length] + newValue).toLocaleString();
 			targets[i].childNodes[0].textContent = newText.indexOf(",") === 1 ? newText.substring(2) : newText.substring(1);
 		}
+
+		// Stop running the interval timer if all counters have finished incrementing.
 		if (finishedCount === targets.length) {
 			window.clearInterval(timerId);
 		}
