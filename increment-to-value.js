@@ -1,10 +1,15 @@
 ;(function() {
 	"use strict";
 
-	var speed = 5000, // Default number of milliseconds to show the animation
-		frameTime = 19, // Number of milliseconds to wait for the next frame
-		frameIndex = 0, // The current frame index
-		frames = speed / frameTime, // Default number of frames to run the animation
+	// Gets a running time that is at least one millisecond long
+	function getValidRunningTime(target) {
+		var runningTime = parseInt(target.getAttribute("data-run-time"));
+		return runningTime > 0 ? runningTime : 1
+	}
+
+	var frameTime = 19, // Number of milliseconds to wait for the next frame
+		startTime = +(new Date()),
+		targets = document.querySelectorAll('.increment-to-value'),
 		pads = [
 			'',
 			'0',
@@ -17,16 +22,15 @@
 			'00000000',
 			'000000000',
 			'0000000000'
-		],
-		targets = document.querySelectorAll('.increment-to-value');
+		];
 
 	// Set all counters to their initial values.
 	for (var i=targets.length-1; i>=0; i--) {
 		targets[i].childNodes[0].textContent = "0";
 		targets[i].incrementToValue = {
-			endCountStr: targets[i].getAttribute('data-final-value'),
-			endCount: parseInt(targets[i].getAttribute('data-final-value')),
-			frames: parseInt(parseInt(targets[i].getAttribute("data-run-time")) / frameTime),
+			finalValueStrLength: targets[i].getAttribute('data-final-value').length,
+			finalValue: parseInt(targets[i].getAttribute('data-final-value')),
+			runningTime: getValidRunningTime(targets[i]),
 			completed: false
 		}
 	}
@@ -37,25 +41,29 @@
 		for (var i = targets.length - 1; i >= 0; i--) {
 
 			// Skip targets that have already reached their final value
-			if (targets[i].completed) {
+			if (targets[i].incrementToValue.completed) {
 				continue;
 			}
 
-			var newValue = parseInt(targets[i].incrementToValue.endCount * frameIndex / targets[i].incrementToValue.frames);
+			// The new value for the counter is the % of the way through the running time (now - startTime / runningTime) multiplied by the final value
+			var newValue = parseInt(targets[i].incrementToValue.finalValue * (+(new Date()) - startTime) / targets[i].incrementToValue.runningTime);
 
 			// Check if we've reached the final value on this frame
-			if (newValue >= targets[i].incrementToValue.endCount) {
-				newValue = targets[i].incrementToValue.endCount;
+			if (newValue >= targets[i].incrementToValue.finalValue) {
+
+				// And finalise it if so
+				newValue = targets[i].incrementToValue.finalValue;
 				targets[i].incrementToValue.completed = true;
 				++finishedCount;
 			}
-			var newText = parseInt("1" + pads[targets[i].incrementToValue.endCountStr.length - (newValue + "").length] + newValue).toLocaleString();
+
+			// Update the text to reflect the current increment
+			var newText = parseInt("1" + pads[targets[i].incrementToValue.finalValueStrLength - (newValue + "").length] + newValue).toLocaleString();
 			targets[i].childNodes[0].textContent = newText.indexOf(",") === 1 ? newText.substring(2) : newText.substring(1);
 		}
 		if (finishedCount === targets.length) {
 			window.clearInterval(timerId);
 		}
 
-		++frameIndex;
 	}, frameTime)
 })();
