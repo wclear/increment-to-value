@@ -7,23 +7,25 @@
 		return runningTime > 0 ? runningTime : 1
 	}
 
-	// Gets an integer for the start value
-	function getValidStartValue(target) {
-		var startValue = parseInt(target.getAttribute('data-start-value'));
-		if (isNaN(startValue)) {
+	// Gets a valid int (0 if not int found) value for the given attribute
+	function getValidInt(target, attribute) {
+		var value = parseInt(target.getAttribute(attribute));
+		if (isNaN(value)) {
 			return 0;
 		}
 		else {
-			return startValue;
+			return value;
 		}
 	}
 
 	// Initialises all the meta information required for each counter
 	function initMeta(targets) {
-		var meta = [];
+		var meta = [],
+			startTime = +(new Date());
 		for (var i = 0; i < targets.length; i++) {
 			var finalValueStr = targets[i].getAttribute('data-final-value'),
-				startValueTemp = getValidStartValue(targets[i]),
+				startValueTemp = getValidInt(targets[i], 'data-start-value'),
+				startTimeTemp = getValidInt(targets[i], 'data-start-delay'),
 				finalValueTemp = parseInt(finalValueStr);
 			var metaObj = {
 				startValue: startValueTemp,
@@ -33,7 +35,8 @@
 				reverse: startValueTemp > finalValueTemp,
 				range: startValueTemp - finalValueTemp,
 				completed: false,
-				target: targets[i]
+				target: targets[i],
+				startTime: startTime + startTimeTemp
 			}
 			meta.push(metaObj);
 			targets[i].childNodes[0].textContent = metaObj.startValue;
@@ -42,7 +45,6 @@
 	}
 
 	var frameTime = 19, // Number of milliseconds to wait for the next frame
-		startTime = +(new Date()),
 		targets = document.querySelectorAll('.increment-to-value'),
 		targetsMeta = initMeta(targets),
 		pads = [
@@ -64,14 +66,15 @@
 	var timerId = window.setInterval(function() {
 		var finishedCount = 0;
 		for (var i = targetsMeta.length - 1; i >= 0; i--) {
+			var now = +(new Date());
 
-			// Skip targets that have already reached their final value
-			if (targetsMeta[i].completed) {
+			// Skip targets that have already reached their final value or that should not yet start counting
+			if (targetsMeta[i].completed || now <= targetsMeta[i].startTime) {
 				continue;
 			}
 
 			// The new value for the counter is the % of the way through the running time (now - startTime / runningTime) multiplied by the final value
-			var percentage = (+(new Date()) - startTime) / targetsMeta[i].runningTime,
+			var percentage = (now - targetsMeta[i].startTime) / targetsMeta[i].runningTime,
 				newValue = parseInt(targetsMeta[i].startValue - (percentage * targetsMeta[i].range));
 
 			// Check if we've reached the final value on this frame
