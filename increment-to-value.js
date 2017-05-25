@@ -92,7 +92,7 @@
 			}
 			else {
 				var newText = parseInt("1" + pads[targetsMeta[i].finalValueStrLength - (newValue + "").length] + newValue).toLocaleString();
-				targetsMeta[i].target.childNodes[0].textContent = newText.indexOf(",") === 1 ? newText.substring(2) : newText.substring(1);
+				targetsMeta[i].target.childNodes[0].textContent = newText.length > 2 && !newText[1].match(/\d/) ? newText.substring(2) : newText.substring(1);
 			}
 		}
 
