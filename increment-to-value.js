@@ -32,6 +32,8 @@
 				finalValueStrLength: finalValueStr.length,
 				finalValue: finalValueTemp,
 				runningTime: getValidRunningTime(targets[i]),
+				hasStarted: false,
+				dynamicDelayTime: 0,
 				reverse: startValueTemp > finalValueTemp,
 				range: startValueTemp - finalValueTemp,
 				completed: false,
@@ -42,6 +44,13 @@
 			targets[i].childNodes[0].textContent = metaObj.startValue;
 		}
 		return meta;
+	}
+
+	// Determines with the time is visible in the sense that the user has scrolled down far enough to see it
+	function isVisible(element) {
+		var top = element.getBoundingClientRect().y,
+			height = document.documentElement.clientHeight;
+		return (window.scrollY + height) > top;
 	}
 
 	var frameTime = 19, // Number of milliseconds to wait for the next frame
@@ -72,10 +81,16 @@
 			if (targetsMeta[i].completed || now <= targetsMeta[i].startTime) {
 				continue;
 			}
+			else if (!targetsMeta[i].hasStarted && !isVisible(targetsMeta[i].target)) {
+				targetsMeta[i].dynamicDelayTime = now - targetsMeta[i].startTime;
+				continue;
+			}
 
 			// The new value for the counter is the % of the way through the running time (now - startTime / runningTime) multiplied by the final value
-			var percentage = (now - targetsMeta[i].startTime) / targetsMeta[i].runningTime,
+			var percentage = (now - (targetsMeta[i].startTime + targetsMeta[i].dynamicDelayTime)) / targetsMeta[i].runningTime,
 				newValue = parseInt(targetsMeta[i].startValue - (percentage * targetsMeta[i].range));
+
+			targetsMeta[i].hasStarted = true;
 
 			// Check if we've reached the final value on this frame
 			if ((targetsMeta[i].reverse && newValue <= targetsMeta[i].finalValue) || (!targetsMeta[i].reverse && newValue >= targetsMeta[i].finalValue)) {
